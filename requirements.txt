@@ -1,0 +1,6 @@
+openai
+streamlit
+requests
+folium
+streamlit-folium
+matplotlib
