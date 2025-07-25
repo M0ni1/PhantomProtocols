@@ -5,17 +5,17 @@ import folium
 from streamlit_folium import st_folium
 import matplotlib.pyplot as plt
 
-# --- Set page config ---
+# --- Page Config ---
 st.set_page_config(page_title="SECURO Crime Mitigation Hub", layout="wide")
 
-# --- Custom CSS (Times New Roman + chat bubbles) ---
+# --- CSS Styling ---
 st.markdown("""
 <style>
 body, .stApp {
     font-family: 'Times New Roman', serif !important;
 }
 .user-bubble {
-    background-color: #e8e8e8;
+    background-color: #e0e0e0;
     padding: 10px;
     border-radius: 10px;
     margin-bottom: 10px;
@@ -29,17 +29,17 @@ body, .stApp {
 </style>
 """, unsafe_allow_html=True)
 
-# --- API Keys (replace with your own) ---
+# --- API KEYS ---
 openai.api_key = "AIzaSyAPS-3Oo6ofSnegNWZDO9SMe6Asf6fw5S8"
 gemini_api_key = "AIzaSyCsb-NiyZwU5J-AitQan9HaHzNse2kN5_c"
 
-# --- Session State Init ---
+# --- Session Init ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
 
-# --- SIDEBAR: MAP + CHART ---
+# --- Sidebar: Map, Chart, Emergency ---
 with st.sidebar:
     st.header("📍 Crime Hotspot Map")
 
@@ -64,34 +64,34 @@ with st.sidebar:
     st.markdown("[🚒 Call Fire Department](tel:911)", unsafe_allow_html=True)
     st.markdown("[🏥 Call Hospital](tel:911)", unsafe_allow_html=True)
 
-# --- MAIN AREA ---
+# --- Main Title ---
 st.title("🔒 SECURO Crime Mitigation Hub")
 
-# --- Chatbot Interface ---
+# --- Chat Interface ---
 st.subheader("🧠 Intelligence Assistant")
 
-# Display past chat messages
+# Chat History
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(f"<div class='user-bubble'><strong>You:</strong> {msg['content']}</div>", unsafe_allow_html=True)
     else:
         st.markdown(f"<div class='bot-bubble'><strong>Bot:</strong> {msg['content']}</div>", unsafe_allow_html=True)
 
-# Input form
+# Chat Input Form
 with st.form("crime_chat_form", clear_on_submit=True):
-    user_input = st.text_area("Enter your crime report or ask a criminology question")
+    user_input = st.text_area("Enter your crime report (start with 'report:') or ask a criminology question")
     submitted = st.form_submit_button("Send")
 
 if submitted and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     if user_input.lower().startswith("report:"):
-        # Analyze report using OpenAI
+        # Use OpenAI
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "You're a crime analyst. Provide brief insights."},
+                    {"role": "system", "content": "You're a professional crime analyst. Provide insights on incidents."},
                     {"role": "user", "content": user_input}
                 ]
             )
@@ -99,14 +99,20 @@ if submitted and user_input:
         except Exception as e:
             reply = f"OpenAI error: {str(e)}"
     else:
-        # Fallback to Gemini API
+        # Use Gemini (Pure HTTP)
         try:
-            gemini_url = "https://generativelanguage.googleapis.com/v1beta2/models/chat-bison-001:generateMessage"
+            gemini_url = f"https://generativelanguage.googleapis.com/v1beta1/models/chat-bison-001:generateMessage?key={gemini_api_key}"
             payload = {
-                "prompt": {"messages": [{"content": user_input}]},
-                "temperature": 0.5
+                "prompt": {
+                    "context": "You're a criminology expert AI assistant.",
+                    "examples": [],
+                    "messages": [{"author": "user", "content": user_input}]
+                },
+                "temperature": 0.7,
+                "candidate_count": 1
             }
-            res = requests.post(f"{gemini_url}?key={gemini_api_key}", json=payload)
+            headers = {"Content-Type": "application/json"}
+            res = requests.post(gemini_url, headers=headers, json=payload)
             reply = res.json()["candidates"][0]["content"]
         except Exception as e:
             reply = f"Gemini error: {str(e)}"
@@ -125,10 +131,7 @@ with st.form("alert_form"):
     submitted_alert = st.form_submit_button("Submit Alert")
 
 if submitted_alert:
-    new_alert = {
-        "location": [lat, lon],
-        "status": status
-    }
+    new_alert = {"location": [lat, lon], "status": status}
     st.session_state.alerts.append(new_alert)
     st.success("✅ Alert submitted.")
     st.experimental_rerun()
