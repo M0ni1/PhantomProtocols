@@ -30,8 +30,8 @@ body, .stApp {
 """, unsafe_allow_html=True)
 
 # --- API Keys (replace with your own) ---
-openai.api_key = "YOUR_OPENAI_API_KEY"
-gemini_api_key = "YOUR_GEMINI_API_KEY"
+openai.api_key = "AIzaSyAPS-3Oo6ofSnegNWZDO9SMe6Asf6fw5S8"
+gemini_api_key = "AIzaSyCsb-NiyZwU5J-AitQan9HaHzNse2kN5_c"
 
 # --- Session State Init ---
 if "messages" not in st.session_state:
